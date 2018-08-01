@@ -18,7 +18,7 @@ const ENVIRONMENT = process.argv[4] || 'master'
 /* Flags  */
 // TODO: parse flags from argv
 const VERBOSE = true  // Logs content items if true
-const QUIET = false // Silences errors if true
+const QUIET = true // Silences errors if true
 
 function logTable(items) {
 

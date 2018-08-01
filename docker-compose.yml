@@ -6,6 +6,8 @@ services:
        args:
            - http_proxy
            - https_proxy
-           - CONTENTFUL_SPACE_ID=${CONTENTFUL_SPACE_ID}
-           - CONTENTFUL_ACCESS_TOKEN=${CONTENTFUL_ACCESS_TOKEN}
-           - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+    environment: 
+      - CONTENTFUL_SPACE_ID=${CONTENTFUL_SPACE_ID}
+      - CONTENTFUL_ACCESS_TOKEN=${CONTENTFUL_ACCESS_TOKEN}
+      - ELASTICSEARCH_URL=${ELASTICSEARCH_URL}
+
