@@ -62,8 +62,10 @@ async function postItems(items) {
 
   console.log(chalk.blue(`${esIndexGet ? good : bad}\tExisting index `) + chalk.blue.bold(INDEX_NAME) + chalk.blue(' found'))
 
+  const indexExists = typeof esIndexGet === 'string'
+
   // create index if not exists
-  if (!esIndexGet && CREATE_INDEX) {
+  if (CREATE_INDEX && !indexExists) {
     const esIndexCreate = await request({
       method: 'PUT',
       uri: `${ELASTICSEARCH_URL}/${INDEX_NAME}`,
@@ -72,11 +74,10 @@ async function postItems(items) {
     })
     .catch (e => {
       if (VERBOSE) console.error(e)
-      fails += 1
     })
     console.log(chalk.blue(`${esIndexCreate ? good : bad}\tAutomatically created index ${INDEX_NAME}`))
-  } else {
-    console.log(chalk.blue('--no-create-index set; Not creating the index.'))
+  } else if (!indexExists) {
+    console.log(chalk.blue('Warning: --no-create-index set; Not creating the index.\n'))
     return 1
   }
 
