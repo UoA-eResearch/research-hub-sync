@@ -2,9 +2,9 @@
   "name": "research-hub-sync",
   "version": "0.0.1",
   "description": "Populates an ElasticSearch instance with data from the Contentful API",
-  "main": "index.js",
+  "main": "research-hub-sync.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node research-hub-sync.js"
   },
   "engines": {
     "node": ">=4.7.2"
@@ -13,6 +13,7 @@
   "dependencies": {
     "chalk": "^1.1.3",
     "cli-table2": "^0.2.0",
+    "commander": "^2.16.0",
     "contentful": "^4.3.0",
     "request": "^2.87.0",
     "request-promise": "^4.2.2"
