@@ -6,15 +6,18 @@ const chalk = require('chalk')
 const Table = require('cli-table2')
 const request = require('request-promise')
 const program = require('commander')
+const changeCase = require('change-case')
 
 program
 .version('0.0.1')
 .usage('[options] <content_type>')
-.option('-v, --verbose', 'Include detailed error messages')
-.option('-s, --summary', 'Print summary of content that will be uploaded')
-.option('-e, --env <environment id>', 'Contentful environment id (default master)')
+.option('-v, --verbose', 'include detailed error messages')
+.option('-s, --summary', 'print summary of content that will be uploaded')
+.option('-c, --no-create-index', 'do not automatically create the ElasticSearch index')
+.option('-e, --env <environment id>', 'contentful environment id (default master)')
 .option('-i, --index <index name>',
-  "ElasticSearch index name (default research-hub-{env}-{content_type} e.g. 'research-hub-master-articles')")
+  "ElasticSearch index name to use. Defaults to research-hub-{env}-{content_type} e.g. 'research-hub-master-articles'."
+  + " camelCase names will be converted to param-case to meet ElasticSearch index name requirements.")
 .parse(process.argv)
 
 if (program.args.length !== 1) {
@@ -30,10 +33,10 @@ const ELASTICSEARCH_URL = process.env.ELASTICSEARCH_URL
 /* Script parameters */
 const CONTENT_TYPE = program.args[0]
 const ENVIRONMENT = program.env || 'master'
-const INDEX_NAME = program.index || ('research-hub-' + ENVIRONMENT + '-' + CONTENT_TYPE)
+const INDEX_NAME = program.index || ('research-hub-' + ENVIRONMENT + '-' + changeCase.paramCase(CONTENT_TYPE))
 const VERBOSE = program.verbose
 const SUMMARY = program.summary
-
+const CREATE_INDEX = program.createIndex
 
 function logTable(items) {
 
@@ -47,16 +50,42 @@ function logTable(items) {
 
   console.log("\n" + responseTable.toString() + "\n")
 
- // console.log(JSON.stringify(response.items[0]))
-
 }
 
 async function postItems(items) {
 
-  var fails = 0
+  // check if index exists
+  const esIndexGet = await request.get(`${ELASTICSEARCH_URL}/${INDEX_NAME}`)
+  .catch (e => {
+    if (VERBOSE) console.error(e)
+  })
 
+  console.log(chalk.blue(`${esIndexGet ? good : bad}\tExisting index `) + chalk.blue.bold(INDEX_NAME) + chalk.blue(' found'))
+
+  // create index if not exists
+  if (!esIndexGet && CREATE_INDEX) {
+    const esIndexCreate = await request({
+      method: 'PUT',
+      uri: `${ELASTICSEARCH_URL}/${INDEX_NAME}`,
+      body: {},
+      json: true
+    })
+    .catch (e => {
+      if (VERBOSE) console.error(e)
+      fails += 1
+    })
+    console.log(chalk.blue(`${esIndexCreate ? good : bad}\tAutomatically created index ${INDEX_NAME}`))
+  } else {
+    console.log(chalk.blue('--no-create-index set; Not creating the index.'))
+    return 1
+  }
+
+  // post docs to index
+
+  var fails = 0
   for (const item of items) {
-    /* Assumes that everything in uri is urlencoded! */
+    // Assumes that everything in uri is urlencoded
+    // Assumes type is always doc
     const postResult = await request({
       method: 'PUT',
       uri: `${ELASTICSEARCH_URL}/${INDEX_NAME}/_doc/${item.sys.id}`,
@@ -71,7 +100,6 @@ async function postItems(items) {
   }
 
   console.log(chalk.blue(`${fails === 0 ? good : bad}\tPosted ${ items.length-fails } ${CONTENT_TYPE}s (${ fails } failed)`))
-  console.log(chalk.green.bold("\nFinished!\n"))
 
   return fails
 }
@@ -87,7 +115,7 @@ async function doSync(client) {
       if (VERBOSE) console.error(e)
     })
 
-    console.log(chalk.blue(`${response ? good : bad}\tTest connection to Contentful`))
+    console.log(chalk.blue(`${response ? good : bad}\tRetrieve ${CONTENT_TYPE} items from Contentful`))
 
     if (response) {
       console.log(
@@ -106,8 +134,6 @@ async function doSync(client) {
      return 1
    }
 }
-
-
 
 console.log(chalk.green.bold('\nContentful ElasticSearch Sync'))
 
