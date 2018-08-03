@@ -4,7 +4,6 @@
 const contentful = require('contentful')
 const chalk = require('chalk')
 const Table = require('cli-table2')
-const request = require('request-promise')
 const program = require('commander')
 const changeCase = require('change-case')
 const elasticsearch = require('elasticsearch')
