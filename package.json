@@ -16,6 +16,7 @@
     "cli-table2": "^0.2.0",
     "commander": "^2.16.0",
     "contentful": "^4.3.0",
+    "elasticsearch": "^15.1.1",
     "request": "^2.87.0",
     "request-promise": "^4.2.2"
   }
